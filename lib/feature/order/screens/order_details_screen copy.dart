@@ -653,7 +653,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                 },
               ) : showBottomView ? ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
-               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed' || controllerOrderModel.orderStatus == 'paid') ? Container(
+               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed') ? Container(
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
@@ -662,7 +662,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : controllerOrderModel.orderStatus == 'paid' ? "Please wait for restaurant to confirm payment" : 'food_waiting_for_cook'.tr,
+                  controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : 'food_waiting_for_cook'.tr,
                   style: robotoMedium,
                 ),
               ) : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted'
@@ -780,16 +780,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     }
                     else{
                       print("Paid online");
-                      if(Get.find<ProfileController>().profileModel!.active == 1) {
-                      Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'picked_up').then((success) {
-                        if(success) {
-                          Get.find<ProfileController>().getProfile();
-                          Get.find<OrderController>().getCurrentOrders();
-                        }
-                      });
-                    }else {
-                      showCustomSnackBar('make_yourself_online_first'.tr);
-                    }
+                      // if(Get.find<ProfileController>().profileModel!.active == 1) {
+                    //   Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'picked_up').then((success) {
+                    //     if(success) {
+                    //       Get.find<ProfileController>().getProfile();
+                    //       Get.find<OrderController>().getCurrentOrders();
+                    //     }
+                    //   });
+                    // }else {
+                    //   showCustomSnackBar('make_yourself_online_first'.tr);
+                    // }
 
                     }
                     

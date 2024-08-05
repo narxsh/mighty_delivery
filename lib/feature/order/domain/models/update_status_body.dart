@@ -5,8 +5,9 @@ class UpdateStatusBody {
   String? otp;
   String method = 'put';
   String? reason;
+  String? amountPaid;
 
-  UpdateStatusBody({this.token, this.orderId, this.status, this.otp, this.reason});
+  UpdateStatusBody({this.token, this.orderId, this.status, this.otp, this.reason,this.amountPaid});
 
   UpdateStatusBody.fromJson(Map<String, dynamic> json) {
     token = json['token'];

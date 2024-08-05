@@ -190,13 +190,14 @@ class OrderController extends GetxController implements GetxService {
     update();
   }
 
-  Future<bool> updateOrderStatus(int? orderId, String status, {bool back = false,  String? reason}) async {
+  Future<bool> updateOrderStatus(int? orderId, String status, {bool back = false,  String? reason,String? amountPaid}) async {
     _isLoading = true;
     update();
     List<MultipartBody> multiParts = orderServiceInterface.prepareOrderProofImages(_pickedPrescriptions);
     UpdateStatusBody updateStatusBody = UpdateStatusBody(
       orderId: orderId, status: status,
       otp: status == 'delivered' ? _otp : null, reason: reason,
+      amountPaid: amountPaid,
     );
     ResponseModel responseModel = await orderServiceInterface.updateOrderStatus(updateStatusBody, multiParts);
     Get.back(result: responseModel.isSuccess);
