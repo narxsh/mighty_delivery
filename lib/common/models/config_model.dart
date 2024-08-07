@@ -43,6 +43,10 @@ class ConfigModel {
   String? disbursementType;
   double? minAmountToPayDm;
 
+  //added by naresh for pay by deliveryman
+  bool? payByDeliveryman;
+  //closed
+
   ConfigModel({
     this.businessName,
     this.logo,
@@ -87,6 +91,7 @@ class ConfigModel {
     this.deliverymanAdditionalJoinUsPageData,
     this.disbursementType,
     this.minAmountToPayDm,
+    this.payByDeliveryman
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -141,6 +146,7 @@ class ConfigModel {
         : null;
     disbursementType = json['disbursement_type'];
     minAmountToPayDm = json['min_amount_to_pay_dm']?.toDouble();
+    payByDeliveryman = json['pay_by_deliveryman'];
   }
 
   Map<String, dynamic> toJson() {
@@ -194,6 +200,7 @@ class ConfigModel {
     }
     data['disbursement_type'] = disbursementType;
     data['min_amount_to_pay_dm'] = minAmountToPayDm;
+    data['pay_by_deliveryman'] = payByDeliveryman;
     return data;
   }
 }

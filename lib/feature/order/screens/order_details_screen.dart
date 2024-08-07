@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:stackfood_multivendor_driver/feature/language/controllers/localization_controller.dart';
@@ -35,7 +36,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_view/photo_view.dart';
 
-import '../../../common/widgets/input_amount_widget.dart';
+import '../widgets/pay_to_restautant.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final int? orderId;
@@ -51,6 +52,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   Timer? _timer;
   int? orderPosition;
+
+  bool payByDeliveryman = Get.find<SplashController>().configModel!.payByDeliveryman!;
 
   void _startApiCalling(){
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -79,6 +82,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   void initState() {
     super.initState();
+
+    Get.find<SplashController>().getConfigData();
+    payByDeliveryman = Get.find<SplashController>().configModel!.payByDeliveryman!;
+    log(payByDeliveryman.toString());
 
     orderPosition = widget.orderIndex;
 
@@ -154,7 +161,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             showBottomView = controllerOrderModel.orderStatus == 'accepted' || controllerOrderModel.orderStatus == 'confirmed'
                 || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'handover'
                 || controllerOrderModel.orderStatus == 'picked_up' || (widget.isRunningOrder ?? true);
-            showSlider = (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
+            
+            showSlider = 
+            payByDeliveryman ?
+            (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
+                || controllerOrderModel.orderStatus == 'picked_up' :
+            (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
                 || controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'picked_up';
           }
 
@@ -652,8 +664,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   }
 
                 },
-              ) : showBottomView ? ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
-               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed' || controllerOrderModel.orderStatus == 'paid') ? Container(
+              ) : showBottomView ? 
+              ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
+               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed' || (controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'paid') && payByDeliveryman) 
+               ? 
+                (controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'paid') && payByDeliveryman ?
+               Container(
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
@@ -661,11 +677,25 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   border: Border.all(width: 1),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : controllerOrderModel.orderStatus == 'paid' ? "Please wait for restaurant to confirm payment" : 'food_waiting_for_cook'.tr,
-                  style: robotoMedium,
+                child: 
+                PayToRestaurant(totalAmount: controllerOrderModel.orderAmount! - controllerOrderModel.deliveryCharge!)
+              ) :
+              Container(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                  border: Border.all(width: 1),
                 ),
-              ) : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted'
+                alignment: Alignment.center,
+                child: 
+                Text(
+                  controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : 'food_waiting_for_cook'.tr,
+                  style: robotoMedium,
+                )
+              )
+              
+              : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted'
               && !restConfModel && cancelPermission! && !selfDelivery) ? Row(children: [
                 Expanded(child: TextButton(
                   onPressed: (){
@@ -758,29 +788,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       });
                     }
                   }else if(controllerOrderModel.orderStatus == 'handover') {
-                    print(controllerOrderModel.orderAmount);
-                    var amountPaid = controllerOrderModel.orderAmount! - controllerOrderModel.deliveryCharge!;
-                    var currency = Get.find<SplashController>().configModel!.currencySymbol!;
-                    print(amountPaid);
-                    if(controllerOrderModel.paymentMethod == "cash_on_delivery"){
-                      Get.dialog(InputAmountWidget(
-                      icon: Images.warning,
-                      title: "Submit cash to restaurant",
-                      description: "Please Pay $currency$amountPaid to the restaurant",
-                       onPressed: (String? amountPaid){
-                      Get.back();
-                      Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'paid', amountPaid: amountPaid).then((success) {
-                        if(success) {
-                          Get.find<ProfileController>().getProfile();
-                          Get.find<OrderController>().getCurrentOrders();
-                        }
-                      });
-                    },
-                    ));
-                    }
-                    else{
-                      print("Paid online");
-                      if(Get.find<ProfileController>().profileModel!.active == 1) {
+                    if(Get.find<ProfileController>().profileModel!.active == 1) {
                       Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'picked_up').then((success) {
                         if(success) {
                           Get.find<ProfileController>().getProfile();
@@ -790,30 +798,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     }else {
                       showCustomSnackBar('make_yourself_online_first'.tr);
                     }
-
-                    }
-                    
-                    
                   }
                 },
-                // label: Text(
-                //   (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
-                //       ? 'swipe_to_confirm_order'.tr : controllerOrderModel.orderStatus == 'picked_up' ? 'swipe_to_deliver_order'.tr
-                //       : controllerOrderModel.orderStatus == 'handover' ? 'swipe_to_pick_up_order'.tr : '',
-                //   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
-                // ),
-
                 label: Text(
                   (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
-                      ? 
-                      'swipe_to_confirm_order'.tr : controllerOrderModel.orderStatus == 'picked_up' ? 'swipe_to_deliver_order'.tr
-                      : 
-                      controllerOrderModel.orderStatus == 'handover' ? "Swipe to Pay Amount"
-                      : '',
+                      ? 'swipe_to_confirm_order'.tr : controllerOrderModel.orderStatus == 'picked_up' ? 'swipe_to_deliver_order'.tr
+                      : controllerOrderModel.orderStatus == 'handover' ? 'swipe_to_pick_up_order'.tr : '',
                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
                 ),
-
-
                 dismissThresholds: 0.5, dismissible: false, shimmer: true,
                 width: 1170, height: 60, buttonSize: 50, radius: 10,
                 icon: Center(child: Icon(
