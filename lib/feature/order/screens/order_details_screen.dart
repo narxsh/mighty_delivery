@@ -158,16 +158,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           double total = itemsPrice + addOns - discount! + (taxIncluded! ? 0 : tax!) + deliveryCharge! - couponDiscount! + dmTips! + additionalCharge + extraPackagingAmount - referrerBonusAmount;
 
           if(controllerOrderModel != null){
+            // showBottomView = controllerOrderModel.orderStatus == 'accepted' || controllerOrderModel.orderStatus == 'confirmed'
+            //     || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'handover'
+            //     || controllerOrderModel.orderStatus == 'picked_up' || (widget.isRunningOrder ?? true);
             showBottomView = controllerOrderModel.orderStatus == 'accepted' || controllerOrderModel.orderStatus == 'confirmed'
-                || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'handover'
+                || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'handover' && controllerOrderModel.paymentMethod == 'cash_on_delivery' || controllerOrderModel.orderStatus == 'paid'
                 || controllerOrderModel.orderStatus == 'picked_up' || (widget.isRunningOrder ?? true);
-            
-            showSlider = 
-            payByDeliveryman ?
-            (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
-                || controllerOrderModel.orderStatus == 'picked_up' :
-            (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
+
+            // showSlider = (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
+            //     || controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'picked_up';
+
+            showSlider = (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
                 || controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'picked_up';
+
           }
 
           return (orderController.orderDetailsModel != null && controllerOrderModel != null && order != null) ? Column(children: [
@@ -664,11 +667,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   }
 
                 },
-              ) : showBottomView ? 
-              ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
-               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed' || (controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'paid') && payByDeliveryman) 
-               ? 
-                (controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'paid') && payByDeliveryman ?
+              ) : showBottomView ? ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
+               || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed' || controllerOrderModel.orderStatus == 'handover' && controllerOrderModel.paymentMethod == "cash_on_delivery" && payByDeliveryman || controllerOrderModel.orderStatus == 'paid') ? 
+
+               controllerOrderModel.paymentMethod == "cash_on_delivery" ?
+               PayToRestaurant(totalAmount: controllerOrderModel.orderAmount! - controllerOrderModel.deliveryCharge!)
+               :
                Container(
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 width: MediaQuery.of(context).size.width,
@@ -677,25 +681,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   border: Border.all(width: 1),
                 ),
                 alignment: Alignment.center,
-                child: 
-                PayToRestaurant(totalAmount: controllerOrderModel.orderAmount! - controllerOrderModel.deliveryCharge!)
-              ) :
-              Container(
-                padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                  border: Border.all(width: 1),
-                ),
-                alignment: Alignment.center,
-                child: 
-                Text(
+                child: Text(
                   controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : 'food_waiting_for_cook'.tr,
                   style: robotoMedium,
-                )
-              )
-              
-              : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted'
+                ),
+              ) : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted'
               && !restConfModel && cancelPermission! && !selfDelivery) ? Row(children: [
                 Expanded(child: TextButton(
                   onPressed: (){
